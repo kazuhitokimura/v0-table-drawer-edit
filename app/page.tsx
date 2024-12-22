@@ -1,101 +1,107 @@
-import Image from "next/image";
+"use client"
+
+import { useState } from 'react'
+import { users, User } from '../mockData'
+import UserTable from '../components/UserTable'
+import EditDrawer from '../components/EditDrawer'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { Toast } from '../components/Toast'
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [data, setData] = useState<User[]>(users)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editedUser, setEditedUser] = useState<User | null>(null)
+  const [tempUser, setTempUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [showToast, setShowToast] = useState(false)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  // ユーザー編集ボタンが押されたときの処理
+  const handleEdit = (user: User) => {
+    if (isDrawerOpen) {
+      // 編集中に他のユーザーを選択した場合の処理
+      if (JSON.stringify(editedUser) !== JSON.stringify(selectedUser)) {
+        setIsDialogOpen(true)
+        setTempUser(user)
+      } else {
+        // 編集内容に変更がない場合、選択ユーザーを更新
+        setIsLoading(true)
+        setTimeout(() => {
+          setSelectedUser(user)
+          setEditedUser(user)
+          setIsLoading(false)
+        }, 200)
+      }
+      // ドロワーが閉じている場合、ドロワーを開きユーザー情報を設定
+    } else {
+      setSelectedUser(user)
+      setEditedUser(user)
+      setIsDrawerOpen(true)
+    }
+  }
+
+  // 編集内容を保存する処理
+  const handleSave = () => {
+    if (editedUser) {
+      setData(data.map(user => user.id === editedUser.id ? editedUser : user))
+      setIsDrawerOpen(false)
+      setSelectedUser(null)
+      setEditedUser(null)
+      setShowToast(true)
+    }
+  }
+
+  // 編集をキャンセルする処理
+  const handleCancel = () => {
+    setIsDrawerOpen(false)
+    setSelectedUser(null)
+    setEditedUser(null)
+  }
+
+  // ドロワーを閉じる際の処理
+  const handleDrawerClose = () => {
+    if (editedUser && JSON.stringify(editedUser) !== JSON.stringify(selectedUser)) {
+      setIsDialogOpen(true)
+    } else {
+      handleCancel()
+    }
+  }
+
+  // 編集内容の破棄を確認する処理
+  const handleConfirmDiscard = () => {
+    setIsDialogOpen(false)
+    setIsDrawerOpen(false)
+    setSelectedUser(null)
+    setEditedUser(null)
+    setTempUser(null)
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">User Management</h1>
+      <UserTable users={data} onEdit={handleEdit} />
+      <EditDrawer
+        isOpen={isDrawerOpen}
+        user={editedUser}
+        onClose={handleDrawerClose}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onChange={setEditedUser}
+        isLoading={isLoading}
+      />
+      <ConfirmDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onConfirm={handleConfirmDiscard}
+      />
+      {showToast && (
+        <Toast
+          message="Changes saved successfully!"
+          onClose={() => setShowToast(false)}
+        />
+      )}
     </div>
-  );
+  )
 }
+
